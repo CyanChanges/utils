@@ -20,7 +20,7 @@ class TestSatisfySemver(TestCase):
         self.assertEqual(to_semver('2.3.3-b'), (2, 3, 3, 'b'))
 
     def test_stringify_semver(self):
-        self.assertEquals(semver_stringify((0, 0, 0)), '0.0.0')
-        self.assertEquals(semver_stringify((1, 2, 3)), '1.2.3')
-        self.assertEquals(semver_stringify((1, 2, 3, 'a')), '1.2.3-a')
-        self.assertEquals(semver_stringify((2, 3, 3, 'b')), '2.3.3-b')
+        self.assertEqual(semver_stringify((0, 0, 0)), '0.0.0')
+        self.assertEqual(semver_stringify((1, 2, 3)), '1.2.3')
+        self.assertEqual(semver_stringify((1, 2, 3, 'a')), '1.2.3-a')
+        self.assertEqual(semver_stringify((2, 3, 3, 'b')), '2.3.3-b')
