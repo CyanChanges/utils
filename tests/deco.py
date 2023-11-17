@@ -21,4 +21,4 @@ class TestExceptScene(TestCase):
         _except_scenes(Scene([bytes, int], {'key': int}))(lambda: None, b'Hello World', 1145, key=141)
 
     def test_generic_type(self):
-        _except_scenes(Scene([Callable, str], {'a': int}))(lambda: None, lambda: None, '114', a=514)
+        _except_scenes(Scene([Callable, str], {'a': int}))(lambda a: None, lambda: None, '114', a=514)

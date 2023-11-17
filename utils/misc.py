@@ -1,7 +1,10 @@
 import importlib
 import sys
-from typing import Any
+from binascii import crc32
+from typing import Any, Self, Optional
 from math import ceil
+from itertools import chain
+from functools import cache
 
 
 def reload(module_or_name: str | Any):
@@ -15,25 +18,75 @@ def self_reload():
     return reload(__name__)
 
 
-def gen_satisfy_semver(data: bytes) -> tuple[int, int, int]:
-    bdata = bin(int(data.hex(), 16))[2:]
-    len_bdata = len(bdata)
-    block_len = ceil(len_bdata / 3)
-    parts = [0, 0, 0]
-
-    parts[0] = bdata[block_len * 2:]
-    parts[1] = bdata[block_len * 1:block_len * 2]
-    parts[2] = bdata[:block_len * 1]
-
-    ver: tuple = tuple(map(lambda p: int(bin(int(p, 2))[2:], 2), parts))
-    return ver
+def bin2int(b: str, base=2):
+    if b.startswith("0b"):
+        return bin2int(b[2:])
+    return int(b, base)
 
 
-def get_data_from_satisfy_semver(semver: tuple[int, int, int]) -> bytes:
-    parts = [0, 0, 0]
-    parts[0] = bin(semver[2])[2:]
-    parts[1] = bin(semver[1])[2:]
-    parts[2] = bin(semver[0])[2:]
+def int2bin(n: int):
+    return bin(n)[2:]
 
-    hdata = hex(int(''.join(parts), 2))[2:]
-    return bytes.fromhex(hdata)
+
+class SatisfySemVer:
+    MASK = (255, 0, 0)
+
+    SUFFIXES = '0123456789abcdef-'
+
+    def __init__(self, data: bytes, t: str = None):
+        self.data = data
+        self.t = self.SUFFIXES.index(t) if t and t != '-' else self.semver()[3]
+
+    def __repr__(self):
+        return f"({self.semver()})<{self.data}>"
+
+    @classmethod
+    def _get_mask(cls) -> tuple[int, int, int]:
+        return cls.MASK
+
+    @cache
+    def semver(self) -> tuple[int, int, int, str]:
+        self.t = crc32(self.data).bit_count()
+        # binary_data = bin(int(self.data.hex(), 16) << 6 | t)[2:]
+        binary_data = int2bin(int(self.data.hex(), 16))
+        len_binary = len(binary_data)
+        block_len = ceil(len_binary / 3)
+        parts = list(self._get_mask())
+
+        parts[0] ^= bin2int(binary_data[:block_len * 1])
+        parts[1] ^= bin2int(binary_data[block_len * 1:block_len * 2])
+        parts[2] ^= bin2int(binary_data[block_len * 2:])
+
+        ver: tuple = tuple(
+            chain(
+                parts,
+                (self.SUFFIXES[self.t],)
+            )
+        )
+        return ver
+
+    @classmethod
+    def from_semver(cls, semver: tuple[int, int, int, str] | tuple[int, int, int, Optional[str]]) -> Self:
+        parts = list(cls._get_mask())
+        t = -1
+        if len(semver) == 4 and isinstance(semver, str):
+            t = cls.SUFFIXES.index(semver[3])
+
+        parts[0] ^= semver[0]
+        parts[1] ^= semver[1]
+        parts[2] ^= semver[2]
+
+        hex_data = hex(bin2int(''.join(map(int2bin, parts))))[2:]
+        data = bytes.fromhex(hex_data)
+        if t != -1 and t != crc32(data).bit_count():
+            raise ValueError(f"Verify failed {t} != {crc32(data).bit_count()}")
+        return cls(data, cls.SUFFIXES[t])
+
+
+def semver_stringify(semver: tuple[int, int, int, str] | tuple[int, int, int, Optional[str]]) -> str:
+    return '-'.join(('.'.join(semver[:3]), semver[3:]))
+
+
+def to_semver(semver: str):
+    ver, *suffix = semver.split('-')
+    return tuple(chain(map(int, ver.split('.')), suffix))
