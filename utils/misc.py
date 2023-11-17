@@ -31,7 +31,7 @@ def int2bin(n: int):
 class SatisfySemVer:
     MASK = (255, 0, 0)
 
-    SUFFIXES = '0123456789abcdef-'
+    SUFFIXES = '0123456789abcdefghijklmnopqrstuvwxyz-'
 
     def __init__(self, data: bytes, t: str = None):
         self.data = data
