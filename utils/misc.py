@@ -66,7 +66,7 @@ class SatisfySemVer:
         return ver
 
     @classmethod
-    def from_semver(cls, semver: tuple[int, int, int, str] | tuple[int, int, int, Optional[str]]) -> Self:
+    def from_semver(cls, semver: tuple[int, int, int, Optional[str]] | tuple[int, int, int]) -> Self:
         parts = list(cls._get_mask())
         t = -1
         if len(semver) == 4 and isinstance(semver, str):
@@ -83,8 +83,8 @@ class SatisfySemVer:
         return cls(data, cls.SUFFIXES[t])
 
 
-def semver_stringify(semver: tuple[int, int, int, str] | tuple[int, int, int, Optional[str]]) -> str:
-    return '-'.join(('.'.join(semver[:3]), semver[3:]))
+def semver_stringify(semver: tuple[int, int, int, Optional[str]] | tuple[int, int, int]) -> str:
+    return '-'.join(('.'.join(map(str, semver[:3])), *semver[3:]))
 
 
 def to_semver(semver: str):
