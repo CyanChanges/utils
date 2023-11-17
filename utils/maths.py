@@ -1,7 +1,5 @@
-from functools import wraps
-from typing import Protocol, Never, Callable, Any, TYPE_CHECKING, Type
 from math import gcd
-import decimal
+from typing import Protocol
 
 from .decos import except_range
 
@@ -21,5 +19,6 @@ def simplify(*nums: int):
 
 @except_range(2, 1)
 def to_float(numerator: int, denominator: int):
-    Fraction()
+    # Fraction(numerator, denominator)
+    return numerator / denominator
 

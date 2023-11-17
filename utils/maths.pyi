@@ -1,4 +1,4 @@
-from typing import Protocol, TypeVar, ParamSpecArgs
+from typing import Protocol, TypeVar
 
 T = TypeVar("T", bound=tuple[int, ...])
 

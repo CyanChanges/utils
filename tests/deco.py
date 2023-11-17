@@ -1,6 +1,6 @@
 from typing import Callable
 from unittest import TestCase
-from decos import _except_scenes, Scene, name_of, gen_msg
+from utils.decos import _except_scenes, Scene, name_of, gen_msg
 
 
 class TestExceptScene(TestCase):

@@ -32,10 +32,10 @@ def install():
 
     if os.getenv("USE_LOGURU"):
         logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
-        o_getLogger = logging.getLogger
+        o_get_logger = logging.getLogger
         logging.getLogger = \
             lambda n: (
-                o_getLogger(n).handlers.clear(),
-                o_getLogger(n).handlers.append(InterceptHandler()),
-                o_getLogger(n)
+                o_get_logger(n).handlers.clear(),
+                o_get_logger(n).handlers.append(InterceptHandler()),
+                o_get_logger(n)
             )[2]
