@@ -107,7 +107,8 @@ class SatisfySemver:
     def from_semver_v1(cls, semver: tuple[int, int, int, Optional[str]] | tuple[int, int, int]) -> Self:
         parts = list(cls._get_mask())
         t = -1
-        if len(semver) == 4 and isinstance(semver[3], str):
+        if cls.has_t(semver):
+            semver: tuple[int, int, int, str]
             t = cls.SUFFIXES.index(semver[3][0])
 
         parts[0] ^= semver[0]
