@@ -1,9 +1,9 @@
-from math import gcd
+from math import gcd, inf
 from typing import Protocol
 
 from .decos import except_range
 
-INF = float('INF')
+INF = inf
 
 
 class Fraction(Protocol):
@@ -21,4 +21,3 @@ def simplify(*nums: int):
 def to_float(numerator: int, denominator: int):
     # Fraction(numerator, denominator)
     return numerator / denominator
-

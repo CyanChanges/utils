@@ -26,7 +26,7 @@ def _except_scenes(*scenes: Scene):
         args_classes: Iterable[Type] = map(lambda a: type(a), args)
         kwargs_classes: dict[str, Type] = dict(map(lambda t: (t[0], type(t[1])), kwargs.items()))
 
-        scene_exc = []
+        # scene_exc = []
 
         for scene in scenes:
             args_exceptions = []

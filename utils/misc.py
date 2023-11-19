@@ -1,7 +1,7 @@
 import importlib
 import sys
 from binascii import crc32
-from typing import Any, Self, Optional
+from typing import Any, Self, Optional, TypeGuard
 from math import ceil
 from itertools import chain
 from functools import cache
@@ -46,6 +46,11 @@ class SatisfySemver:
         return f"({self.semver()})<{self.data}>"
 
     @classmethod
+    def has_t(cls, semver: tuple[int, int, int] | tuple[int, int, int, Optional[str]]) \
+            -> TypeGuard[tuple[int, int, int, str]]:
+        return len(semver) == 4 and isinstance(semver[3], str)
+
+    @classmethod
     def _get_mask(cls) -> tuple[int, int, int]:
         return cls.MASK
 
@@ -79,7 +84,8 @@ class SatisfySemver:
         parts = list(cls._get_mask())
         t = -1
         sz_block_sz = cls.PART_SZ
-        if len(semver) == 4 and isinstance(semver[3], str):
+        if cls.has_t(semver):
+            semver: tuple[int, int, int, str]
             if len(semver[3]) == 0:
                 return cls.from_semver_v1(semver)
             t = cls.SUFFIXES.index(semver[3][0])
