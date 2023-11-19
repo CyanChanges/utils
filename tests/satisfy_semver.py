@@ -1,16 +1,23 @@
 from unittest import TestCase
-from utils.misc import SatisfySemVer, to_semver, semver_stringify
+from utils.misc import SatisfySemver, to_semver, semver_stringify
 
 
 class TestSatisfySemver(TestCase):
     def test_basic(self):
-        self.assertEqual(SatisfySemVer("Hello World!".encode()).data, "Hello World!".encode())
-        self.assertEqual(SatisfySemVer("Hello World!".encode()).data, "Hello World!".encode())
+        self.assertEqual(
+            SatisfySemver("There is very very very long text!!!".encode()).data,
+            "There is very very very long text!!!".encode()
+        )
+        self.assertEqual(SatisfySemver("Some text here!".encode()).data, "Some text here!".encode())
+
+    def test_basic2(self):
+        semver = SatisfySemver("vivo 50".encode()).semver()
+        self.assertEqual(SatisfySemver.from_semver(semver).data, "vivo 50".encode())
 
     def test_r_a(self):
         self.assertEqual(
-            SatisfySemVer.from_semver(SatisfySemVer("Hello World!".encode()).semver()).semver(),
-            (2429212711, 3728781022, 1919706145, 'd')
+            (1214606483, 1864390511, 491444773152, 'd0'),
+            SatisfySemver.from_semver(SatisfySemver("Hello World!".encode()).semver()).semver()
         )
 
     def test_to_semver(self):

@@ -28,14 +28,19 @@ def int2bin(n: int):
     return bin(n)[2:]
 
 
-class SatisfySemVer:
+class SatisfySemver:
+    VERSION = 2
+
     MASK = (255, 0, 0)
 
     SUFFIXES = '0123456789abcdefghijklmnopqrstuvwxyz-'
 
-    def __init__(self, data: bytes, t: str = None):
+    PART_SZ = 8
+
+    def __init__(self, data: bytes, t: str = None, c=VERSION):
         self.data = data
-        self.t = self.SUFFIXES.index(t) if t and t != '-' else self.semver()[3]
+        self.version = c
+        self.t = self.SUFFIXES.index(t) if t and t.startswith('-') else self.semver()[3]
 
     def __repr__(self):
         return f"({self.semver()})<{self.data}>"
@@ -50,27 +55,54 @@ class SatisfySemVer:
         # binary_data = bin(int(self.data.hex(), 16) << 6 | t)[2:]
         binary_data = int2bin(int(self.data.hex(), 16))
         len_binary = len(binary_data)
-        block_len = ceil(len_binary / 3)
+        block_sz = ceil(len_binary / 3)
+        binary_data = binary_data.zfill(ceil(len_binary / 3) * 3)
+        sz_block_sz = self.PART_SZ + ceil(block_sz.bit_length() / self.PART_SZ) - 1
         parts = list(self._get_mask())
 
-        parts[0] ^= bin2int(binary_data[:block_len * 1])
-        parts[1] ^= bin2int(binary_data[block_len * 1:block_len * 2])
-        parts[2] ^= bin2int(binary_data[block_len * 2:])
+        parts[0] ^= bin2int(binary_data[:block_sz * 1])
+        parts[1] ^= bin2int(binary_data[block_sz * 1:block_sz * 2])
+        parts[2] ^= bin2int(binary_data[block_sz * 2:])
+        parts[2] <<= sz_block_sz
+        parts[2] |= block_sz
 
-        ver: tuple = tuple(
+        semver: tuple = tuple(
             chain(
                 parts,
-                (self.SUFFIXES[self.t],)
+                (self.SUFFIXES[self.t] + self.SUFFIXES[ceil(sz_block_sz / self.PART_SZ) - 1],)
             )
         )
-        return ver
+        return semver
 
     @classmethod
     def from_semver(cls, semver: tuple[int, int, int, Optional[str]] | tuple[int, int, int]) -> Self:
         parts = list(cls._get_mask())
         t = -1
-        if len(semver) == 4 and isinstance(semver, str):
-            t = cls.SUFFIXES.index(semver[3])
+        sz_block_sz = cls.PART_SZ
+        if len(semver) == 4 and isinstance(semver[3], str):
+            if len(semver[3]) == 0:
+                return cls.from_semver_v1(semver)
+            t = cls.SUFFIXES.index(semver[3][0])
+            sz_block_sz += (cls.SUFFIXES.index(semver[3][1]) * cls.PART_SZ)
+
+        parts[0] ^= semver[0]
+        parts[1] ^= semver[1]
+        parts[2] ^= semver[2]
+        block_sz = parts[2] & bin2int('1' * sz_block_sz)
+        parts[2] >>= sz_block_sz
+
+        hex_data = hex(bin2int(''.join(map(lambda x: int2bin(x).zfill(block_sz), parts))))[2:]
+        data = bytes.fromhex(hex_data)
+        if t != -1 and t != crc32(data).bit_count():
+            raise ValueError(f"Verify failed: {t} != {crc32(data).bit_count()}")
+        return cls(data, cls.SUFFIXES[t], cls.VERSION)
+
+    @classmethod
+    def from_semver_v1(cls, semver: tuple[int, int, int, Optional[str]] | tuple[int, int, int]) -> Self:
+        parts = list(cls._get_mask())
+        t = -1
+        if len(semver) == 4 and isinstance(semver[3], str):
+            t = cls.SUFFIXES.index(semver[3][0])
 
         parts[0] ^= semver[0]
         parts[1] ^= semver[1]
@@ -79,8 +111,8 @@ class SatisfySemVer:
         hex_data = hex(bin2int(''.join(map(int2bin, parts))))[2:]
         data = bytes.fromhex(hex_data)
         if t != -1 and t != crc32(data).bit_count():
-            raise ValueError(f"Verify failed {t} != {crc32(data).bit_count()}")
-        return cls(data, cls.SUFFIXES[t])
+            raise ValueError(f"Verify failed: {t} != {crc32(data).bit_count()}")
+        return cls(data, cls.SUFFIXES[t], 1)
 
 
 def semver_stringify(semver: tuple[int, int, int, Optional[str]] | tuple[int, int, int]) -> str:
